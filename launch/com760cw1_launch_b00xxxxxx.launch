@@ -1,5 +1,5 @@
 <launch>
-    <node pkg="turtlesim" type="turtlesim_node" name="turtlesim_node" output="screen"/>
+      <node pkg="turtlesim" type="turtlesim_node" name="turtlesim" output="screen"/>
 
     <node pkg="com760cw1_b00xxxxxx" type="set_background.py" 
           name="set_background_node" output="screen" />

@@ -38,7 +38,6 @@ class LeaderTurtle:
         rospy.wait_for_service('/spawn')
         rospy.wait_for_service('/kill')
 
-        self.setup_background()
         self.spawn_turtles()
 
         self.instruction_pub = rospy.Publisher(
@@ -67,17 +66,6 @@ class LeaderTurtle:
 
         rospy.loginfo("Leader ready")
         rospy.sleep(2.0)
-
-    def setup_background(self):
-        """Set random background color"""
-        rospy.set_param('/turtlesim/background_r', random.randint(0, 200))
-        rospy.set_param('/turtlesim/background_g', random.randint(0, 200))
-        rospy.set_param('/turtlesim/background_b', random.randint(0, 200))
-        try:
-            rospy.wait_for_service('/clear', timeout=3.0)
-            rospy.ServiceProxy('/clear', Empty)()
-        except:
-            pass
 
     def spawn_turtles(self):
         kill = rospy.ServiceProxy('/kill', Kill)
