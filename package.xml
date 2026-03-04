@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>com760cw1_b00xxxxxx</name>
+  <version>0.0.1</version>
+  <description>COM760 Coursework 1 - Leader Follower Formation</description>
+  <maintainer email="student@ulster.ac.uk">student</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>message_generation</build_depend>
+
+  <depend>rospy</depend>
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>turtlesim</depend>
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
+
+  <exec_depend>message_runtime</exec_depend>
+</package>
