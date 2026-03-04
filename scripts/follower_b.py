@@ -104,7 +104,7 @@ class FollowerBTurtle:
 
     def move_to_formation(self):
         """Move to formation position using TF to find target"""
-        self.set_pen(0, 0, 255, 2, 0)  # Blue pen
+        self.set_pen(255, 255, 255, 2, 0)  # White pen
         rospy.loginfo("FollowerB moving to formation position")
 
         rate = rospy.Rate(10)
@@ -167,6 +167,8 @@ class FollowerBTurtle:
             teleport = rospy.ServiceProxy(f'/{self.follower_name}/teleport_absolute', TeleportAbsolute)
             teleport(self.initial_pose.x, self.initial_pose.y, self.initial_pose.theta)
             rospy.loginfo(f"FollowerB teleported to initial: ({self.initial_pose.x:.2f}, {self.initial_pose.y:.2f})")
+            # Stop any residual velocity after teleport
+            self.vel_pub.publish(Twist())
         except Exception as e:
             rospy.logerr(f"FollowerB teleport failed: {e}")
         self.set_pen(255, 255, 255, 2, 0)

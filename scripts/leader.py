@@ -15,7 +15,7 @@ import geometry_msgs.msg
 WINDOW_MIN = 0.5
 WINDOW_MAX = 10.5
 BORDER_THRESHOLD = 1.2
-LEADER_SPEED = 1.0
+LEADER_SPEED = 2.0
 CENTER_X = 5.5
 CENTER_Y = 5.5
 
@@ -65,13 +65,14 @@ class LeaderTurtle:
         )
 
         rospy.loginfo("Leader ready")
-        rospy.sleep(2.0)
+        rospy.sleep(0.5)
 
     def spawn_turtles(self):
         kill = rospy.ServiceProxy('/kill', Kill)
         spawn = rospy.ServiceProxy('/spawn', Spawn)
 
-        for name in [self.leader_name, self.follower_a_name, self.follower_b_name, 'turtle1']:
+        # for name in [self.leader_name, self.follower_a_name, self.follower_b_name, 'turtle1']:
+        for name in ['turtle1']:
             try:
                 kill(name)
             except:
@@ -219,31 +220,50 @@ class LeaderTurtle:
         twist.linear.x = LEADER_SPEED
         rate = rospy.Rate(10)
         rospy.loginfo("Leader moving with red pen...")
+        # Continue moving until the turtle actually reaches the window edge
+        # Determine dominant motion axis from heading and wait until that
+        # coordinate hits the corresponding window boundary.
         while not rospy.is_shutdown():
-            if self.is_near_border():
-                self.vel_pub.publish(Twist())
-                rospy.loginfo("Leader reached border")
-                break
             self.vel_pub.publish(twist)
             rate.sleep()
 
+            theta = self.leader_pose.theta
+            dx = math.cos(theta)
+            dy = math.sin(theta)
+
+            # Use a small epsilon so the turtle visibly 'hits' the wall
+            eps = 0.05
+            if abs(dx) >= abs(dy):
+                # X-dominant motion
+                if dx > 0 and self.leader_pose.x >= WINDOW_MAX - eps:
+                    self.vel_pub.publish(Twist())
+                    rospy.loginfo("Leader hit right border")
+                    break
+                if dx < 0 and self.leader_pose.x <= WINDOW_MIN + eps:
+                    self.vel_pub.publish(Twist())
+                    rospy.loginfo("Leader hit left border")
+                    break
+            else:
+                # Y-dominant motion
+                if dy > 0 and self.leader_pose.y >= WINDOW_MAX - eps:
+                    self.vel_pub.publish(Twist())
+                    rospy.loginfo("Leader hit top border")
+                    break
+                if dy < 0 and self.leader_pose.y <= WINDOW_MIN + eps:
+                    self.vel_pub.publish(Twist())
+                    rospy.loginfo("Leader hit bottom border")
+                    break
+
     def return_leader_to_center(self):
         self.set_pen(self.leader_name, 255, 255, 255, 2, 0)
-        rospy.loginfo("Leader returning to center via GoToTarget service")
-        try:
-            rospy.wait_for_service('b00xxxxxxgototarget', timeout=3.0)
-            go = rospy.ServiceProxy('b00xxxxxxgototarget', B00xxxxxxGoToTarget)
-            req = B00xxxxxxGoToTargetRequest()
-            req.goal_x = CENTER_X
-            req.goal_y = CENTER_Y
-            req.tolerance = 0.4
-            req.turtle_name = self.leader_name
-            result = go(req)
-            if not result.success:
-                rospy.logwarn("GoToTarget failed, teleporting leader to center")
-                self._teleport_leader_center()
-        except Exception as e:
-            rospy.logerr(f"GoToTarget error: {e}, teleporting")
+        rospy.loginfo("Leader returning to center...")
+        
+        # Call the internal method directly to avoid service deadlock
+        # Use a tighter tolerance so the leader reaches center precisely
+        success = self.move_turtle_to_goal(self.leader_name, CENTER_X, CENTER_Y, 0.05)
+        
+        if not success:
+            rospy.logwarn("Movement failed, teleporting...")
             self._teleport_leader_center()
 
     def _teleport_leader_center(self):
@@ -253,6 +273,18 @@ class LeaderTurtle:
             teleport(CENTER_X, CENTER_Y, 0.0)
         except Exception as e:
             rospy.logerr(f"Teleport failed: {e}")
+        else:
+            # Ensure internal state matches teleport and stop any motion
+            try:
+                self.leader_pose.x = CENTER_X
+                self.leader_pose.y = CENTER_Y
+                self.leader_pose.theta = 0.0
+                # publish zero velocity to ensure it doesn't drift
+                self.vel_pub.publish(Twist())
+                # small sleep to allow pose updates to propagate
+                rospy.sleep(0.05)
+            except Exception:
+                pass
 
     def clear_screen(self):
         try:
@@ -266,8 +298,8 @@ class LeaderTurtle:
             rospy.loginfo("=== CYCLE START: Sending Formation instruction ===")
             self.send_instruction(0, 'Formation')
 
-            rospy.loginfo("Waiting 10s for followers to form up...")
-            rospy.sleep(10.0)
+            # rospy.loginfo("Waiting 5s for followers to form up...")
+            rospy.sleep(5.0)
 
             # Turn to random direction
             angle = random.uniform(0, 2 * math.pi)
@@ -279,7 +311,7 @@ class LeaderTurtle:
             except Exception as e:
                 rospy.logerr(f"Turn failed: {e}")
 
-            rospy.sleep(1.0)
+            rospy.sleep(0.5)
 
             # Move to border
             self.move_straight_until_border()
@@ -287,11 +319,11 @@ class LeaderTurtle:
             # Send return instruction
             rospy.loginfo("Sending Return instruction")
             self.send_instruction(1, 'Return')
-            rospy.sleep(2.0)
+            rospy.sleep(1.0)
 
             # Leader returns to center
             self.return_leader_to_center()
-            rospy.sleep(2.0)
+            rospy.sleep(1.0)
 
             # Clear and repeat
             self.clear_screen()
