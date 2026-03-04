@@ -3,6 +3,7 @@ import rospy
 import random
 from std_srvs.srv import Empty
 
+# Set random background color for turtlesim
 def set_random_background():
     rospy.init_node('set_background_node', anonymous=True)
     
@@ -10,21 +11,7 @@ def set_random_background():
     rospy.set_param('/turtlesim/background_g', random.randint(0, 255))
     rospy.set_param('/turtlesim/background_b', random.randint(0, 255))
 
-    # rospy.loginfo("Waiting for /clear service...")
-    # rospy.wait_for_service('/clear')
-    
-    # try:
-    #     # 2. Give the Parameter Server a split second to update
-    #     rospy.sleep(0.1)
-        
-    #     # 3. Call the clear service to refresh the background
-    #     clear_bg = rospy.ServiceProxy('/clear', Empty)
-    #     clear_bg()
-        
-    #     rospy.loginfo("Background color updated successfully.")
-    # except rospy.ServiceException as e:
-    #     rospy.logerr("Service call failed: %s" % e)
-
+# Entry point for set_background node
 if __name__ == '__main__':
     try:
         set_random_background()

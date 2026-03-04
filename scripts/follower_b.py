@@ -11,6 +11,7 @@ import tf2_geometry_msgs
 import geometry_msgs.msg
 
 class FollowerBTurtle:
+    # Initialize follower B node with pose tracking and TF listening
     def __init__(self):
         rospy.init_node('follower_b_node', anonymous=True)
 
@@ -23,10 +24,7 @@ class FollowerBTurtle:
 
         self.rate = rospy.Rate(10)
 
-        # TF broadcaster for this follower's frame
         self.tf_broadcaster = tf2_ros.TransformBroadcaster()
-
-        # TF listener to look up target frame from leader
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
 
@@ -42,9 +40,9 @@ class FollowerBTurtle:
         rospy.loginfo("FollowerB ready")
         rospy.sleep(1.0)
 
+    # Update pose and save initial position on first callback
     def pose_callback(self, pose):
         self.my_pose = pose
-        # Save very first pose as initial position
         if self.initial_pose is None:
             self.initial_pose = Pose()
             self.initial_pose.x = pose.x
@@ -53,8 +51,8 @@ class FollowerBTurtle:
             rospy.loginfo(f"FollowerB initial pose saved: ({pose.x:.2f}, {pose.y:.2f})")
         self.broadcast_tf()
 
+    # Broadcast follower position as transformation frame
     def broadcast_tf(self):
-        """Broadcast this follower's position as a TF frame"""
         t = geometry_msgs.msg.TransformStamped()
         t.header.stamp = rospy.Time.now()
         t.header.frame_id = "world"
@@ -69,6 +67,7 @@ class FollowerBTurtle:
         t.transform.rotation.w = math.cos(yaw / 2)
         self.tf_broadcaster.sendTransform(t)
 
+    # Handle formation and return instructions from leader
     def instruction_callback(self, msg):
         rospy.loginfo(f"FollowerB received instruction {msg.instructionID}: {msg.message}")
         self.following = False
@@ -79,6 +78,7 @@ class FollowerBTurtle:
             # Return instruction
             self.return_to_initial()
 
+    # Set follower pen color, width, and up/down state
     def set_pen(self, r, g, b, width, off):
         try:
             rospy.wait_for_service(f'/{self.follower_name}/set_pen', timeout=2.0)
@@ -86,8 +86,8 @@ class FollowerBTurtle:
         except:
             pass
 
+    # Query TF to get current target position in world coordinates
     def get_target_position_from_tf(self):
-        """Use TF to find where target_FollowerB is in world coordinates"""
         try:
             trans = self.tf_buffer.lookup_transform(
                 'world',
@@ -102,9 +102,9 @@ class FollowerBTurtle:
             rospy.logwarn(f"FollowerB TF lookup failed: {e}")
             return None, None
 
+    # Move to formation position relative to leader
     def move_to_formation(self):
-        """Move to formation position using TF to find target"""
-        self.set_pen(255, 255, 255, 2, 0)  # White pen
+        self.set_pen(255, 255, 255, 2, 0)
         rospy.loginfo("FollowerB moving to formation position")
 
         rate = rospy.Rate(10)
@@ -135,8 +135,8 @@ class FollowerBTurtle:
         self.vel_pub.publish(Twist())
         self.following = True
 
+    # Continuously track and maintain formation with leader
     def follow_leader(self):
-        """Continuously track target_FollowerB frame using TF"""
         tx, ty = self.get_target_position_from_tf()
         if tx is None:
             return
@@ -156,8 +156,8 @@ class FollowerBTurtle:
         twist.angular.z = 4.0 * diff
         self.vel_pub.publish(twist)
 
+    # Teleport back to initial spawn position
     def return_to_initial(self):
-        """Teleport back to original random spawn position with white pen"""
         if self.initial_pose is None:
             rospy.logwarn("FollowerB has no initial pose")
             return
@@ -167,12 +167,12 @@ class FollowerBTurtle:
             teleport = rospy.ServiceProxy(f'/{self.follower_name}/teleport_absolute', TeleportAbsolute)
             teleport(self.initial_pose.x, self.initial_pose.y, self.initial_pose.theta)
             rospy.loginfo(f"FollowerB teleported to initial: ({self.initial_pose.x:.2f}, {self.initial_pose.y:.2f})")
-            # Stop any residual velocity after teleport
             self.vel_pub.publish(Twist())
         except Exception as e:
             rospy.logerr(f"FollowerB teleport failed: {e}")
         self.set_pen(255, 255, 255, 2, 0)
 
+    # Main control loop for follower behavior
     def run(self):
         rospy.loginfo("FollowerB running")
         while not rospy.is_shutdown():
@@ -180,6 +180,7 @@ class FollowerBTurtle:
                 self.follow_leader()
             self.rate.sleep()
 
+# Entry point for follower B node
 if __name__ == '__main__':
     try:
         follower = FollowerBTurtle()
