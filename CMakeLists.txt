@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(com760cw1_b00xxxxxx)
+project(com760cw1_b01041751)
 
 find_package(catkin REQUIRED COMPONENTS
   rospy
@@ -13,12 +13,12 @@ find_package(catkin REQUIRED COMPONENTS
 
 add_message_files(
   FILES
-  B00xxxxxxLeaderMessage.msg
+  B01041751LeaderMessage.msg
 )
 
 add_service_files(
   FILES
-  B00xxxxxxGoToTarget.srv
+  B01041751GoToTarget.srv
 )
 
 generate_messages(

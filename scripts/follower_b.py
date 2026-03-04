@@ -5,7 +5,7 @@ import math
 from turtlesim.msg import Pose
 from turtlesim.srv import TeleportAbsolute, SetPen
 from geometry_msgs.msg import Twist
-from com760cw1_b00xxxxxx.msg import B00xxxxxxLeaderMessage
+from com760cw1_b01041751.msg import B01041751LeaderMessage
 import tf2_ros
 import tf2_geometry_msgs
 import geometry_msgs.msg
@@ -14,7 +14,7 @@ class FollowerBTurtle:
     def __init__(self):
         rospy.init_node('follower_b_node', anonymous=True)
 
-        self.follower_name = 'b00xxxxxxFollowerB'
+        self.follower_name = 'B01041751FollowerB'
         self.target_frame = 'target_FollowerB'
 
         self.my_pose = Pose()
@@ -37,7 +37,7 @@ class FollowerBTurtle:
         )
 
         rospy.Subscriber(f'/{self.follower_name}/pose', Pose, self.pose_callback)
-        rospy.Subscriber('/leader_instructions', B00xxxxxxLeaderMessage, self.instruction_callback)
+        rospy.Subscriber('/leader_instructions', B01041751LeaderMessage, self.instruction_callback)
 
         rospy.loginfo("FollowerB ready")
         rospy.sleep(1.0)
